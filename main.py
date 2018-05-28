@@ -1,15 +1,13 @@
 from __future__ import unicode_literals
 
 import pprint
-from argparse import ArgumentParser
-
 import os
 from flask import Flask, request, abort
 from linebot.exceptions import (
     InvalidSignatureError
 )
 
-from constants import line_bot_api, handler, make_static_tmp_dir, get_text_template_for_id, \
+from constants import line_bot_api, handler, get_text_template_for_id, \
     get_text_template_for_delegate
 
 from sample_handler import (
@@ -32,6 +30,7 @@ from linebot.models import (
 
 app = Flask(__name__)
 
+# before deploying, turn debug device to phone
 
 @app.route("/line/callback", methods=['POST'])
 def callback():
@@ -66,14 +65,14 @@ def handle_text_message(event):
     juminhyou_flow(event, user_text)
 
     kei_car_certificate_flow(event, user_text)
-
+    # q1
     if user_text in ['不在住所証明書・不在住所証明書']:
         reply_text = '誰でも申請できます。窓口に来た人の本人確認書類が必要です。'
         line_bot_api.reply_message(
             event.reply_token,
             get_text_send_messages(event, reply_text)
         )
-
+    # q1
     if user_text in ['住民票の写しの広域交付']:
         reply_text = '２００円。本人または本人と同一世帯の人で、窓口に来た人の本人確認書類が必要です。申請者は記載台に設置されていないので、来庁の際は証明受付窓口までお越しください。'
         line_bot_api.reply_message(
@@ -84,21 +83,26 @@ def handle_text_message(event):
     inkan_flow(event, user_text)
 
     # q1
-    if user_text in ['戸籍謄本・抄本、改製原戸・除籍・戸籍の附票がほしい。']:
+    # error
+    if user_text in ['戸籍謄本・抄本、改製原戸・除籍・戸籍の附票がほしい。', 'ksk']:
         carousel_template = CarouselTemplate(columns=[
-            CarouselColumn(text='ほしいのはどなたですか？', title='', actions=[
-                MessageTemplateAction(label='本人が戸籍系書類がほしい。', text='本人が戸籍系書類がほしい。'),
-                MessageTemplateAction(label='本人の配偶者、直径の血族（本人の親、祖父母、子、孫）が戸籍系書類をほしい。',
-                                      text='本人の配偶者、直径の血族（本人の親、祖父母、子、孫）が戸籍系書類をほしい。'),
-                MessageTemplateAction(label='任意代理人が戸籍系書類をほしい。', text='任意代理人が戸籍系書類をほしい。'),
+            CarouselColumn(text='ほしいのはどなたですか？', title='お選びください。', actions=[
+                MessageTemplateAction(label='本人', text='本人が戸籍系書類がほしい。'),
+                MessageTemplateAction(label='本人配偶者、直系血族',
+                                      text='本人の配偶者、直系の血族（本人の親、祖父母、子、孫）が戸籍系書類をほしい。'),
+                MessageTemplateAction(label='任意代理人', text='任意代理人が戸籍系書類をほしい。')
             ]),
-            CarouselColumn(text='ほしいのはどなたですか？', title='', actions=[
-                MessageTemplateAction(label='成年後見人が戸籍系書類をほしい。', text='成年後見人が戸籍系書類をほしい。'),
-                MessageTemplateAction(label='親族（本人が死亡しており、直系の血族もいない場合）が戸籍系書類をほしい',
+            CarouselColumn(text='ほしいのはどなたですか？', title='お選びください', actions=[
+                MessageTemplateAction(label='成年後見人', text='成年後見人が戸籍系書類をほしい。'),
+                MessageTemplateAction(label='親族',
                                       text='親族（本人が死亡しており、直系の血族もいない場合）が戸籍系書類をほしい。'),
-                MessageTemplateAction(label='特定事務時給者が戸籍系書類をほしい', text='特定事務時給者が戸籍系書類をほしい。'),
-                MessageTemplateAction(label='国・地方公共団体の機関の職員からの請求', text='国・地方公共団体の機関の職員からの請求'),
+                MessageTemplateAction(label='ダミー', text='このボタンは、ボタンの数を揃えるためのダミーです。')
             ]),
+            CarouselColumn(text='ほしいのはど？', title='お選びください', actions=[
+                MessageTemplateAction(label='特定事務受給者', text='特定事務時給者が'),
+                MessageTemplateAction(label='国/地方公共団体職員', text='国・地方公共団体の機関の職員からの請求'),
+                MessageTemplateAction(label='ダミー', text='このボタンは、ボタンの数を揃えるためのダミーです。')
+            ])
         ])
         template_message = TemplateSendMessage(
             alt_text='Carousel alt text', template=carousel_template)
@@ -111,7 +115,7 @@ def handle_text_message(event):
             get_text_send_messages(event, reply_text)
         )
 
-    if user_text in ['本人の配偶者、直径の血族（本人の親、祖父母、子、孫）が戸籍系書類をほしい。']:
+    if user_text in ['本人の配偶者、直系の血族（本人の親、祖父母、子、孫）が戸籍系書類をほしい。']:
         reply_text = '直系の血族であることを証明できるもの（例：戸籍謄本・抄本）、本人確認書類が必要です。'
         line_bot_api.reply_message(
             event.reply_token,
@@ -157,8 +161,8 @@ def handle_text_message(event):
     if user_text in ['身分証明書がほしい']:
         buttons_template = ButtonsTemplate(
             title='身分証明書がほしいのはどなたですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='本人が身分証明書をほしい', text='本人が身分証明書をほしい'),
-                MessageTemplateAction(label='本人以外が身分証明書をほしい', text='本人以外が身分証明書をほしい')
+                MessageTemplateAction(label='本人', text='本人が身分証明書をほしい'),
+                MessageTemplateAction(label='本人以外', text='本人以外が身分証明書をほしい')
             ])
         template_message = TemplateSendMessage(
             alt_text='身分証明書がほしいのはどなたですか？', template=buttons_template
@@ -184,8 +188,8 @@ def handle_text_message(event):
     if user_text in ['独身証明書がほしい']:
         buttons_template = ButtonsTemplate(
             title='独身証明書がほしいのはどなたですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='本人が独身証明書をほしい', text='本人が独身証明書をほしい'),
-                MessageTemplateAction(label='本人以外が独身証明書をほしい', text='本人以外が独身証明書をほしい')
+                MessageTemplateAction(label='本人', text='本人が独身証明書をほしい'),
+                MessageTemplateAction(label='本人以外', text='本人以外が独身証明書をほしい')
             ])
         template_message = TemplateSendMessage(
             alt_text='独身証明書がほしいのはどなたですか？', template=buttons_template
@@ -210,7 +214,7 @@ def handle_text_message(event):
     if user_text in ['受理証明書がほしい']:
         buttons_template = ButtonsTemplate(
             title='受理証明書がほしいのはどなたですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='受理証明書を届出人がほしい', text='受理証明書を届出人がほしい'),
+                MessageTemplateAction(label='届出人(本人)', text='受理証明書を届出人がほしい'),
                 MessageTemplateAction(label='本人以外', text='受理証明を本人以外がほしい')
             ])
         template_message = TemplateSendMessage(
@@ -236,22 +240,19 @@ def handle_text_message(event):
     if user_text in ['戸籍届記載事項証明書']:
         reply_text = '戸籍届記載事項証明書（戸籍届出をした市役所で交付する）（使用目的が制限されている）' \
                      '（1~2か月以上前に届出した届書は法務局に送付され交付できない可能性があるので、戸籍係へ確認をとる必要がある） ※350円'
-        line_bot_api.reply_message(
-            event.reply_token,
-            get_text_send_messages(event, reply_text)
-        )
-
+        messages = get_text_send_messages(event, reply_text)
         buttons_template = ButtonsTemplate(
             title='戸籍届記載事項証明書をほしいのはどなたですか？', text='お選びください', actions=[
                 MessageTemplateAction(label='届出人（本人）', text='戸籍届記載事項証明書をほしいのは届出人（本人）'),
                 MessageTemplateAction(label='利害関係人', text='戸籍届記載事項証明書をほしいのは利害関係人'),
-                MessageTemplateAction(label='死亡給付金の受け取り者（死亡届の記載事項証明）', text='戸籍届記載事項証明書をほしいのは死亡給付金の受け取り者（死亡届の記載事項証明）'),
-                MessageTemplateAction(label='戸籍届記載事項証明書をほしいのは該当の子の親', text='戸籍届記載事項証明書をほしいのは該当の子の親'),
+                MessageTemplateAction(label='死亡給付金の受け取り者', text='戸籍届記載事項証明書をほしいのは死亡給付金の受け取り者（死亡届の記載事項証明）'),
+                MessageTemplateAction(label='該当の子の親', text='戸籍届記載事項証明書をほしいのは該当の子の親'),
             ])
         template_message = TemplateSendMessage(
             alt_text='戸籍届記載事項証明書をほしいのはどなたですか？', template=buttons_template
         )
-        line_bot_api.reply_message(event.reply_token, template_message)
+        messages.append(template_message)
+        line_bot_api.reply_message(event.reply_token, messages)
 
     if user_text in ['戸籍届記載事項証明書をほしいのは届出人（本人）']:
         reply_text = '本人確認書類が必要です。'
@@ -283,11 +284,9 @@ def handle_text_message(event):
 
     # q1
     if user_text in ['自動車の仮ナンバーがほしい']:
-        reply_text = '''
-        窓口に来た人の本人確認書類、臨時運行する車の自賠責保険証明書の原本、
-        臨時運行する車の自動車検査証または抹消登録証明書または完成検査終了証等（車体番号・社名・車体形状が確認できるもの）、
-        窓口に来た人の印鑑(法人の場合は法人の印鑑）、法人に所属していることを示す社員証や代表者からの在職証明書が必要です。
-        '''
+        reply_text = '''窓口に来た人の本人確認書類、
+臨時運行する車の自賠責保険証明書の原本、
+臨時運行する車の自動車検査証または抹消登録証明書または完成検査終了証等（車体番号・社名・車体形状が確認できるもの）、窓口に来た人の印鑑(法人の場合は法人の印鑑）、法人に所属していることを示す社員証や代表者からの在職証明書が必要です。'''
         line_bot_api.reply_message(
             event.reply_token,
             get_text_send_messages(event, reply_text)
@@ -296,8 +295,8 @@ def handle_text_message(event):
     if user_text in ['住所変更証明書がほしい']:
         buttons_template = ButtonsTemplate(
             title='住所変更証明書がほしいのはどなたですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='住所変更証明書がほしいのは本人', text='住所変更証明書がほしいのは本人'),
-                MessageTemplateAction(label='住所変更証明書がほしいのは本人以外', text='住所変更証明書がほしいのは本人以外')
+                MessageTemplateAction(label='本人', text='住所変更証明書がほしいのは本人'),
+                MessageTemplateAction(label='本人以外', text='住所変更証明書がほしいのは本人以外')
             ])
         template_message = TemplateSendMessage(
             alt_text='住所変更証明書がほしいのはどなたですか？', template=buttons_template
@@ -306,14 +305,12 @@ def handle_text_message(event):
 
     if user_text in ['住所変更証明書がほしいのは本人']:
         reply_text = '''（町名地番変更による住所変更を証明するもの） ※無料'''
-        line_bot_api.reply_message(
-            event.reply_token,
-            get_text_send_messages(event, reply_text)
-        )
+        messages = get_text_send_messages(event, reply_text)
         reply_text = '窓口に来た人の本人確認書類が必要です。'
+        messages.extend(get_text_send_messages(event, reply_text))
         line_bot_api.reply_message(
             event.reply_token,
-            get_text_send_messages(event, reply_text)
+            messages
         )
 
     if user_text in ['住所変更証明書がほしいのは本人以外']:
@@ -326,19 +323,17 @@ def handle_text_message(event):
     # q1
     if user_text in ['合併証明']:
         reply_text = '（旧町村がつくば市に合併されたことを文章により証明するもの） ※無料'
-        line_bot_api.reply_message(
-            event.reply_token,
-            get_text_send_messages(event, reply_text)
-        )
+        messages = get_text_send_messages(event, reply_text)
         buttons_template = ButtonsTemplate(
             title='合併証明が必要なかたはどなたですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='合併証明が必要なのは本人', text='合併証明が必要なのは本人'),
-                MessageTemplateAction(label='合併証明が必要なのは本人以外', text='合併証明が必要なのは本人以外')
+                MessageTemplateAction(label='本人', text='合併証明が必要なのは本人'),
+                MessageTemplateAction(label='本人以外', text='合併証明が必要なのは本人以外')
             ])
         template_message = TemplateSendMessage(
             alt_text='合併証明が必要なかたはどなたですか？', template=buttons_template
         )
-        line_bot_api.reply_message(event.reply_token, template_message)
+        messages.append(template_message)
+        line_bot_api.reply_message(event.reply_token, messages)
 
     if user_text in ['合併証明が必要なのは本人']:
         reply_text = '窓口に来た人の本人確認書類が必要です'
@@ -356,22 +351,24 @@ def handle_text_message(event):
 
 
 def inkan_flow(event, user_text):
+    # q1
     if user_text in ['印鑑登録をしたい']:
         buttons_template = ButtonsTemplate(
             title='印鑑登録をしたいのはどなたですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='印鑑登録をしたいのは本人', text='印鑑登録をしたいのは本人'),
-                MessageTemplateAction(label='印鑑登録をしたいのは本人＋保証人', text='印鑑登録をしたいのは本人＋保証人'),
+                MessageTemplateAction(label='本人', text='印鑑登録をしたいのは本人'),
+                MessageTemplateAction(label='本人＋保証人', text='印鑑登録をしたいのは本人＋保証人'),
                 MessageTemplateAction(label='本人以外', text='印鑑登録をしたいのは本人以外'),
             ])
         template_message = TemplateSendMessage(
             alt_text='印鑑登録をしたいのはどなたですか？', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
+
     if user_text in ['印鑑登録をしたいのは本人']:
         buttons_template = ButtonsTemplate(
-            title='本人確認書類をお持ちですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='写真付き本人確認書類を持っている', text=''),
-                MessageTemplateAction(label='写真付き本人確認書類を持っていない', text='')
+            title='写真付き本人確認書類をお持ちですか？', text='お選びください', actions=[
+                MessageTemplateAction(label='持っている', text='写真付き本人確認書類を持っている'),
+                MessageTemplateAction(label='持っていない', text='写真付き本人確認書類を持っていない')
             ])
         template_message = TemplateSendMessage(
             alt_text='本人確認書類をお持ちですか？', template=buttons_template
@@ -401,11 +398,12 @@ def inkan_flow(event, user_text):
             event.reply_token,
             get_text_send_messages(event, reply_text)
         )
+    # q1
     if user_text in ['印鑑登録証明書']:
         buttons_template = ButtonsTemplate(
             title='印鑑登録証明書をほしいのはどなたですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='印鑑登録証明書を本人がほしい', text='印鑑登録証明書を本人がほしい'),
-                MessageTemplateAction(label='印鑑登録証明書を本人以外がほしい', text='印鑑登録証明書を本人以外がほしい'),
+                MessageTemplateAction(label='本人がほしい', text='印鑑登録証明書を本人がほしい'),
+                MessageTemplateAction(label='本人以外がほしい', text='印鑑登録証明書を本人以外がほしい'),
                 MessageTemplateAction(label='印鑑登録証がない場合', text='印鑑登録証がない場合'),
             ])
         template_message = TemplateSendMessage(
@@ -430,11 +428,12 @@ def inkan_flow(event, user_text):
             event.reply_token,
             get_text_send_messages(event, reply_text)
         )
+    # q1
     if user_text in ['印鑑登録を廃止したい']:
         buttons_template = ButtonsTemplate(
             title='印鑑登録を廃止したいのはどなたですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='本人が印鑑登録を廃止したい', text='本人が印鑑登録を廃止したい'),
-                MessageTemplateAction(label='本人以外が印鑑登録を廃止したい', text='本人以外が印鑑登録を廃止したい')
+                MessageTemplateAction(label='本人', text='本人が印鑑登録を廃止したい'),
+                MessageTemplateAction(label='本人以外', text='本人以外が印鑑登録を廃止したい')
             ])
         template_message = TemplateSendMessage(
             alt_text='印鑑登録を廃止したいのはどなたですか？', template=buttons_template
@@ -455,11 +454,12 @@ def inkan_flow(event, user_text):
 
 
 def kei_car_certificate_flow(event, user_text):
+    # q1
     if user_text in ['軽自動車用住所証明書がほしい', 'kei']:
         buttons_template = ButtonsTemplate(
-            title='軽自動車用住所証明書がほしい', text='お選びください', actions=[
-                MessageTemplateAction(label='軽自動車用住所証明書を本人がほしい', text='軽自動車用住所証明書を本人がほしい'),
-                MessageTemplateAction(label='軽自動車用住所証明書を本人以外がほしい', text='軽自動車用住所証明書を本人以外がほしい')
+            title='軽自動車用住所証明書がほしいのはどなたですか？', text='お選びください', actions=[
+                MessageTemplateAction(label='本人がほしい', text='軽自動車用住所証明書を本人がほしい'),
+                MessageTemplateAction(label='本人以外がほしい', text='軽自動車用住所証明書を本人以外がほしい')
             ])
         template_message = TemplateSendMessage(
             alt_text='軽自動車用住所証明書がほしい', template=buttons_template
@@ -474,9 +474,9 @@ def kei_car_certificate_flow(event, user_text):
     if user_text in ['軽自動車用住所証明書を本人以外がほしい']:
         buttons_template = ButtonsTemplate(
             title='軽自動車用住所証明書をほしいのはどなたですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='軽自動車用住所証明書を本人と同一世帯の人がほしい', text='軽自動車用住所証明書を本人と同一世帯の人がほしい'),
-                MessageTemplateAction(label='軽自動車用住所証明書を任意代理人がほしい', text='軽自動車用住所証明書を任意代理人がほしい'),
-                MessageTemplateAction(label='軽自動車用住所証明書を自動車販売関係会社の社員などがほしい', text='軽自動車用住所証明書を自動車販売関係会社の社員などがほしい'),
+                MessageTemplateAction(label='本人と同一世帯の人', text='軽自動車用住所証明書を本人と同一世帯の人がほしい'),
+                MessageTemplateAction(label='任意代理人', text='軽自動車用住所証明書を任意代理人がほしい'),
+                MessageTemplateAction(label='自動車販売関係社社員', text='軽自動車用住所証明書を自動車販売関係会社の社員などがほしい'),
             ])
         template_message = TemplateSendMessage(
             alt_text='軽自動車用住所証明書をほしいのはどなたですか？', template=buttons_template
@@ -503,11 +503,12 @@ def kei_car_certificate_flow(event, user_text):
 
 
 def juminhyou_flow(event, user_text):
+    # q1
     if user_text in ['住民票がほしい', 'jumin']:
         buttons_template = ButtonsTemplate(
             title='住民票がほしい方は本人ですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='本人が住民票をほしい', text='本人が住民票をほしい'),
-                MessageTemplateAction(label='本人以外が住民票をほしい', text='本人以外が住民票をほしい')
+                MessageTemplateAction(label='本人', text='本人が住民票をほしい'),
+                MessageTemplateAction(label='本人以外', text='本人以外が住民票をほしい')
             ])
         template_message = TemplateSendMessage(
             alt_text='住民票がほしい', template=buttons_template
@@ -519,7 +520,8 @@ def juminhyou_flow(event, user_text):
             event.reply_token,
             get_text_send_messages(event, reply_text)
         )
-    if user_text in ['本人以外が住民票をほしい']:
+    # error
+    if user_text in ['本人以外が住民票をほしい', 'jh']:
         carousel_template = CarouselTemplate(columns=[
             CarouselColumn(text='住民票をほしいのはどなたですか？', title='お選びください', actions=[
                 MessageTemplateAction(label='本人と同一世帯の人', text='本人と同一世帯の人'),
@@ -527,13 +529,15 @@ def juminhyou_flow(event, user_text):
                 MessageTemplateAction(label='法定代理人', text='法定代理人'),
             ]),
             CarouselColumn(text='住民票をほしいのはどなたですか？', title='お選びください', actions=[
-                MessageTemplateAction(label='親族（除票の申請で本人がすでに死亡しており、本人が単身世帯だったとき）',
+                MessageTemplateAction(label='親族',
                                       text='親族（除票の申請で本人がすでに死亡しており、本人が単身世帯だったとき）'),
                 MessageTemplateAction(label='債権者', text='債権者'),
+                MessageTemplateAction(label='ダミー', text='このボタンはボタンの数を統一するためのダミーです。'),
             ]),
             CarouselColumn(text='住民票をほしいのはどなたですか？', title='お選びください', actions=[
-                MessageTemplateAction(label='特定事務責任者（弁護士・司法書士など）', text='特定事務責任者（弁護士・司法書士など）'),
-                MessageTemplateAction(label='国・公共地方団体の機関の職員', text='国・公共地方団体の機関の職員'),
+                MessageTemplateAction(label='特定事務責任者', text='特定事務責任者（弁護士・司法書士など）'),
+                MessageTemplateAction(label='国/公共地方団体職員', text='国・公共地方団体の機関の職員'),
+                MessageTemplateAction(label='ダミー', text='このボタンはボタンの数を統一するためのダミーです。'),
             ]),
         ])
         template_message = TemplateSendMessage(
@@ -547,9 +551,9 @@ def juminhyou_flow(event, user_text):
         )
     if user_text in ['任意代理人']:
         buttons_template = ButtonsTemplate(
-            title='取得したい住民票などは「住基コードやマイナンバーなし」', text='お選びください', actions=[
-                MessageTemplateAction(label='「住基コードやマイナンバーなし」', text='「住基コードやマイナンバーなし」'),
-                MessageTemplateAction(label='「住基コードやマイナンバーあり」', text='「住基コードやマイナンバーあり」')
+            title='取得したい住民票などは「住基コードやマイナンバー」なし、あり？', text='お選びください', actions=[
+                MessageTemplateAction(label='あり', text='「住基コードやマイナンバーなし」'),
+                MessageTemplateAction(label='なし', text='「住基コードやマイナンバーあり」')
             ])
         template_message = TemplateSendMessage(
             alt_text='取得したい住民票などは「住基コードやマイナンバーなし」', template=buttons_template
@@ -616,6 +620,7 @@ def juminhyou_flow(event, user_text):
 
 
 def my_number_others_flow(event, user_text):
+    # q1
     if user_text in ['far', '市役所が遠いから支所でマイナンバー手続きをしたい']:
         buttons_template = ButtonsTemplate(
             title='お客様がおっしゃっている支所とは、「窓口センター」or「出張所」？', text='お選びください', actions=[
@@ -623,7 +628,7 @@ def my_number_others_flow(event, user_text):
                 MessageTemplateAction(label='出張所', text='出張所'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='default alt_text', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     if user_text in ['出張所']:
@@ -632,16 +637,17 @@ def my_number_others_flow(event, user_text):
             event.reply_token,
             get_text_send_messages(event, reply_text)
         )
+        # carousel
     if user_text in ['窓口センター']:
         carousel_template = CarouselTemplate(columns=[
             CarouselColumn(text='希望する手続きはなんですか？', title='お選びください', actions=[
-                MessageTemplateAction(label='マイナンバー入りの住民の発行', text='マイナンバー入りの住民の発行'),
+                MessageTemplateAction(label='個人番号入り住民票', text='マイナンバー入りの住民の発行'),
                 MessageTemplateAction(label='通知カードの再発行', text='通知カードの再発行'),
-                MessageTemplateAction(label='写真付きマイナンバーカードは申込書の作成まで', text='写真付きマイナンバーカードは申込書の作成まで'),
+                MessageTemplateAction(label='写真付個人番号カード', text='写真付きマイナンバーカードは申込書'),
             ]),
             CarouselColumn(text='希望する手続きはなんですか？', title='お選びください', actions=[
-                MessageTemplateAction(label='通知カード返戻カード分の受け取り', text='通知カード返戻カード分の受け取り'),
-                MessageTemplateAction(label='作成済みマイナンバーカードの受け取り', text='作成済みマイナンバーカードの受け取り'),
+                MessageTemplateAction(label='通知カード返戻カード分の受取', text='通知カード返戻カード分の受け取り'),
+                MessageTemplateAction(label='作成済み個人番号カードの受取', text='作成済みマイナンバーカードの受け取り'),
             ]),
         ])
         template_message = TemplateSendMessage(
@@ -680,15 +686,17 @@ def my_number_others_flow(event, user_text):
             event.reply_token,
             get_text_send_messages(event, reply_text)
         )
+
+    # q1
     if user_text in ['マイナンバーカード', 'number']:
         carousel_template = CarouselTemplate(columns=[
             CarouselColumn(text='お選びください', title='マイナンバー関連', actions=[
-                MessageTemplateAction(label='マイナンバーカード・通知カードを紛失した', text='マイナンバーカード・通知カードを紛失した'),
-                MessageTemplateAction(label='マイナンバーの登録をしたい', text='マイナンバーの登録をしたい'),
+                MessageTemplateAction(label='個人番号/通知カード紛失', text='マイナンバーカード・通知カードを紛失した'),
+                MessageTemplateAction(label='マイナンバーの登録', text='マイナンバーの登録をしたい'),
             ]),
             CarouselColumn(text='お選びください', title='マイナンバー関連', actions=[
-                MessageTemplateAction(label='コンビニで証明書を取得しようとしたがロック', text='コンビニで証明書を取得しようとしたがロック'),
-                MessageTemplateAction(label='マイナンバーカードの受け取り予約をしたい', text='マイナンバーカードの受け取り予約をしたい'),
+                MessageTemplateAction(label='マイナンバーがロック', text='コンビニで証明書を取得しようとしたがロック'),
+                MessageTemplateAction(label='個人番号カードの受取予約', text='マイナンバーカードの受け取り予約をしたい'),
             ]),
         ])
         template_message = TemplateSendMessage(
@@ -702,13 +710,15 @@ def my_number_others_flow(event, user_text):
             get_text_send_messages(event, reply_text)
         )
     if user_text in ['マイナンバーカードの受け取り予約をしたい']:
+
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='平日の本庁舎希望の場合、予約不要。'))
         buttons_template = ButtonsTemplate(
-            title='土日の本庁舎or平日の窓口センター？（平日の本庁舎希望の場合、予約不要である。）', text='お選びください', actions=[
+            title='土日の本庁舎or平日の窓口センター？', text='お選びください', actions=[
                 MessageTemplateAction(label='土日の本庁舎', text='土日の本庁舎'),
                 MessageTemplateAction(label='平日の窓口センター', text='平日の窓口センター'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='default alt_text', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     if user_text in ['土日の本庁舎']:
@@ -726,6 +736,7 @@ def my_number_others_flow(event, user_text):
 
 
 def my_number_make_flow(event, user_text):
+    # q1
     if user_text in ['マイナンバーの登録をしたい', 'make']:
         buttons_template = ButtonsTemplate(
             title='１ヶ月以内に必要ですか？', text='お選びください', actions=[
@@ -733,7 +744,7 @@ def my_number_make_flow(event, user_text):
                 MessageTemplateAction(label='必要ではないです。', text='必要ではないです。'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='１ヶ月以内に必要ですか？', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     if user_text in ['必要です。']:
@@ -744,23 +755,24 @@ def my_number_make_flow(event, user_text):
         )
     if user_text in ['必要ではないです。']:
         buttons_template = ButtonsTemplate(
-            title='通知カードと写真入りマイナンバーカードのどちらをご希望ですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='通知カードがほしい', text='通知カードがほしい'),
-                MessageTemplateAction(label='マイナンバーカードがほしい', text='マイナンバーカードがほしい'),
+            title='通知カードと写真入り？', text='お選びください', actions=[
+                MessageTemplateAction(label='通知カード', text='通知カードがほしい'),
+                MessageTemplateAction(label='個人番号カード', text='マイナンバーカードがほしい'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='通知カードor写真入りマイナンバーカード？', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
+
     if user_text in ['通知カードがほしい']:
         buttons_template = ButtonsTemplate(
-            title='通知カードを受け取ったことはございますか？なくされた場合、なくした場所は自宅ですか？それとも自宅外ですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='通知カードを受け取ったことがない', text='通知カードを受け取ったことがない'),
-                MessageTemplateAction(label='通知カードを自宅でなくした', text='通知カードを自宅でなくした'),
-                MessageTemplateAction(label='通知カードを自宅外・盗難でなくした', text='通知カードを自宅外または盗難でなくした'),
+            title='通知カードを受け取ったことはございますか？', text='お選びください', actions=[
+                MessageTemplateAction(label='受け取ったことがない', text='通知カードを受け取ったことがない'),
+                MessageTemplateAction(label='自宅でなくした', text='通知カードを自宅でなくした'),
+                MessageTemplateAction(label='自宅外・盗難で紛失', text='通知カードを自宅外または盗難でなくした'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='通知カードを受け取ったことはございますか？', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     if user_text in ['通知カードを受け取ったことがない']:
@@ -776,7 +788,7 @@ def my_number_make_flow(event, user_text):
                 MessageTemplateAction(label='2回目以降である', text='2回目以降である')
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='マイナンバーカードを作るのは初めてですか？', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     if user_text in ['初めてである']:
@@ -785,40 +797,39 @@ def my_number_make_flow(event, user_text):
             text='お選びください', actions=[
                 MessageTemplateAction(label='本庁舎へ来庁可能', text='本庁舎へ来庁可能'),
                 MessageTemplateAction(label='本庁舎へ来庁不可', text='本庁舎へ来庁不可'),
-                MessageTemplateAction(label='', text=''),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='本庁舎への来庁は可能ですか？（通知カードに付属する申請書が使える場合もあるが、住所移動や修正などでIDが出回っている場合もあることを考えると最新のIDの取得をしていただいたほうが確実。）', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     if user_text in ['2回目以降である']:
         buttons_template = ButtonsTemplate(
             title='なくしたのはどこですか？', text='お選びください', actions=[
-                MessageTemplateAction(label='自宅でマインバーカードを紛失した', text='自宅でマインバーカードを紛失した'),
-                MessageTemplateAction(label='自宅外または盗難でマイナンバーカードを紛失した', text='自宅外または盗難でマイナンバーカードを紛失した'),
+                MessageTemplateAction(label='自宅', text='自宅でマインバーカードを紛失した'),
+                MessageTemplateAction(label='自宅外または盗難', text='自宅外または盗難でマイナンバーカードを紛失した'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='default alt_text', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     if user_text in ['自宅でマインバーカードを紛失した']:
         buttons_template = ButtonsTemplate(
-            title='写真付きマイナンバーカード（８００円）を作りますか？それとも通知カード（５００円）を作るか？', text='お選びください', actions=[
-                MessageTemplateAction(label='マイナンバーカードを再発行したい', text='マイナンバーカードを再発行したい'),
-                MessageTemplateAction(label='通知カードを再発行したい', text='通知カードを再発行したい'),
+            title='写真付きマイナンバーカード(800円)or 通知カード(500円)？', text='お選びください', actions=[
+                MessageTemplateAction(label='マイナンバーカード', text='マイナンバーカードを再発行したい'),
+                MessageTemplateAction(label='通知カード', text='通知カードを再発行したい'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='default alt_text', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     if user_text in ['自宅外または盗難でマイナンバーカードを紛失した']:
         buttons_template = ButtonsTemplate(
             title='マイナンバーの変更を希望しますか？', text='お選びください', actions=[
-                MessageTemplateAction(label='マイナンバーの変更を希望する', text='マイナンバーの変更を希望する'),
-                MessageTemplateAction(label='マイナンバーの変更を希望しない', text='マイナンバーの変更を希望しない'),
+                MessageTemplateAction(label='変更を希望する', text='マイナンバーの変更を希望する'),
+                MessageTemplateAction(label='変更を希望しない', text='マイナンバーの変更を希望しない'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='default alt_text', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     if user_text in ['通知カードを再発行したい']:
@@ -838,6 +849,7 @@ def my_number_make_flow(event, user_text):
 
 
 def my_number_lost_flow(event, user_text):
+    # q1
     # My number flow lost flow
     if user_text in ['lost', 'マイナンバーカード・通知カードを紛失した']:
         buttons_template = ButtonsTemplate(
@@ -846,7 +858,7 @@ def my_number_lost_flow(event, user_text):
                 MessageTemplateAction(label='個人番号カード', text='個人番号カードを紛失'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='なくしたのは通知カード or 個人番号カード？', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     # My number flow answers(1)
@@ -858,18 +870,18 @@ def my_number_lost_flow(event, user_text):
                 MessageTemplateAction(label='急ぎで必要', text='通知カードが急ぎで必要'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='なくしたのはどこですか？', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     # My number flow answers(1, 1) and 1,2,2
     if user_text in ['通知カードを自宅でなくした', 'マイナンバーの変更を希望しない']:
         buttons_template = ButtonsTemplate(
             title='どちらで作り直しますか？', text='お選びください', actions=[
-                MessageTemplateAction(label='通知カードで作り直す', text='通知カードで作り直す'),
-                MessageTemplateAction(label='マイナンバーカードで作り直す', text='マイナンバーカードで作り直す'),
+                MessageTemplateAction(label='通知カードで', text='通知カードで作り直す'),
+                MessageTemplateAction(label='マイナンバーカードで', text='マイナンバーカードで作り直す'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='どちらで作り直しますか', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     # My number flow answers(1, 2)
@@ -880,7 +892,7 @@ def my_number_lost_flow(event, user_text):
                 MessageTemplateAction(label='希望しない', text='マイナンバーの変更を希望しない'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='どちらで作り直しますか', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     # My number flow answers(1, 3)
@@ -905,7 +917,7 @@ def my_number_lost_flow(event, user_text):
                 MessageTemplateAction(label='本庁舎へ来庁不可', text='本庁舎へ来庁不可'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='本庁舎へ来庁可能ですか', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     # My number flow 1,2,1
@@ -936,18 +948,18 @@ def my_number_lost_flow(event, user_text):
                 MessageTemplateAction(label='自宅外、または盗難', text='自宅外または盗難でマイナンバーカードを紛失'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='どこでなくされましたか', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
 
     if user_text in ['自宅でマイナンバーカードを紛失']:
         buttons_template = ButtonsTemplate(
             title='通知カードとマイナンバーカード、どちらを再交付されますか？', text='お選びください', actions=[
-                MessageTemplateAction(label='通知カードを再交付したい', text='通知カードを再交付したい'),
-                MessageTemplateAction(label='マイナンバーカードを再交付したい', text='マイナンバーカードを再交付したい'),
+                MessageTemplateAction(label='通知カード', text='通知カードを再交付したい'),
+                MessageTemplateAction(label='マイナンバーカード', text='マイナンバーカードを再交付したい'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='通知カードとマイナンバーカード、どちらを再交付されますか？', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
 
@@ -971,9 +983,10 @@ def my_number_lost_flow(event, user_text):
                 MessageTemplateAction(label='変更を希望しない', text='マイナンバーカードを自宅外または盗難で紛失したので、番号をそのままに再交付したい。'),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='個人番号の変更を希望されますか？', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
+
     if user_text in ['マイナンバーカードを自宅外または盗難で紛失したので、番号を変えた上で再交付したい。']:
         reply_text = '警察でどういった状況でなくしたのかを説明し、受理番号をもらい本人確認書類を持参し来庁。個人番号カード廃止処理後、番号変更の手続きをして新しいマイナンバーで通知カードが送付される。'
         line_bot_api.reply_message(
@@ -985,10 +998,9 @@ def my_number_lost_flow(event, user_text):
             title='通知カードとマイナンバーカードのどちらで再交付されますか？', text='お選びください', actions=[
                 MessageTemplateAction(label='通知カード', text='自宅外または盗難でマイナンバーカードを紛失したので、番号そのままに通知カードを発行したい'),
                 MessageTemplateAction(label='マイナンバーカード', text='自宅外または盗難でマイナンバーカードを紛失したので、番号そのままにマイナンバーカードを再発行したい。'),
-                MessageTemplateAction(label='', text=''),
             ])
         template_message = TemplateSendMessage(
-            alt_text='', template=buttons_template
+            alt_text='通知カードとマイナンバーカードのどちらで再交付されますか？', template=buttons_template
         )
         line_bot_api.reply_message(event.reply_token, template_message)
     if user_text in ['自宅外または盗難でマイナンバーカードを紛失したので、番号そのままに通知カードを発行したい']:
@@ -1057,5 +1069,6 @@ add_multimedia_event_handler()
 add_group_event_handler()
 
 if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 8000))
+    print(port)
     app.run(debug=True, port=port, host='0.0.0.0')
