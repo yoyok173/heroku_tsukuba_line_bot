@@ -1057,4 +1057,5 @@ add_multimedia_event_handler()
 add_group_event_handler()
 
 if __name__ == "__main__":
-    app.run(debug=True, port=int(os.getenv("PORT", 8000)))
+    print(os.getenv("PORT", 8000))
+    app.run(debug=True, port=int(os.getenv("PORT", 5000)))
