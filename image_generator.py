@@ -1,16 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont
 import numpy
 import math
-# im = Image.new('RGB', (2500, 843), (128, 128, 128))
-#
-# draw = ImageDraw.Draw(im)
-# draw.line(((30, 200), (130, 100), (80, 50)), fill=(255, 255, 0))
-#
-# font = ImageFont.truetype('/Library/Fonts/Arial Bold.ttf', 64)
-#
-# draw.multiline_text((30, 30), 'Pillow sample', fill=(0, 0, 0), font=font)
-#
-# im.show()
 from constants import CHANNEL_ACCESS_TOKEN
 from richmenu import RichMenuManager, RichMenu
 
@@ -35,6 +25,7 @@ def get_position(row, column):
     y = row * grid_height
     return x, y
 
+
 large_image_res = (2500, 1686)
 small_image_res = (2500, 843)
 canvas = Image.new('RGB', small_image_res, (255, 255, 255))
@@ -51,9 +42,11 @@ grid_height = math.ceil(small_image_res[1]/row_count)
 
 # Setup RichMenuManager
 rmm = RichMenuManager(CHANNEL_ACCESS_TOKEN)
-# Setup RichMenu to register
-rm = RichMenu(name="menu_init", chat_bar_text="問い合わせカテゴリー", size_full=False)
+print(rmm.get_list())
+rmm.remove_all()
 
+# Setup RichMenu to register
+rm = RichMenu(name="menu_init", chat_bar_text="問い合わせ分類", size_full=False)
 
 for i, word in enumerate(trigger_words):
 
@@ -75,7 +68,11 @@ print("Registered as " + richmenu_id)
 # Apply to user
 user_id = "U0a028f903127e2178bd789b4b4046ba7"
 rmm.apply(user_id, richmenu_id)
-
-# Check
+# # Check
 res = rmm.get_applied_menu(user_id)
-print(user_id  + ":" + res["richMenuId"])
+print(res)
+# rmm.detach(user_id)
+# res = rmm.get_applied_menu(user_id)
+# print(res)
+
+print(user_id + ":" + res["richMenuId"])

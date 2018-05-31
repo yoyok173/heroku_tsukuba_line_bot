@@ -5,6 +5,7 @@ import errno
 from dotenv import load_dotenv
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import TextSendMessage
+from richmenu import RichMenuManager, RichMenu
 
 if os.path.isfile('.env') or os.path.isfile('env'):
     print('found .env. So it should be a local environment.')
@@ -39,6 +40,7 @@ elif debugging_tool == 'line-sim':
 
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 
+rmm = RichMenuManager(CHANNEL_ACCESS_TOKEN)
 
 # function for create tmp dir for download content
 def make_static_tmp_dir():

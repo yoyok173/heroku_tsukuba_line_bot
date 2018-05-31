@@ -10,7 +10,7 @@ from linebot.exceptions import (
 )
 
 from constants import line_bot_api, handler, get_text_template_for_id, \
-    get_text_template_for_delegate, CHANNEL_ACCESS_TOKEN
+    get_text_template_for_delegate, CHANNEL_ACCESS_TOKEN, rmm
 
 from sample_handler import (
     text_message_handler_sample, add_group_event_handler,
@@ -743,7 +743,8 @@ def my_number_others_flow(event, user_text):
             get_text_send_messages(event, reply_text)
         )
     if user_text in ['マイナンバーカードの受け取り予約をしたい']:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='平日の本庁舎希望の場合、予約不要。'))
+        messages = [TextSendMessage(text='平日の本庁舎希望の場合、予約不要。')]
+
         buttons_template = ButtonsTemplate(
             title='土日の本庁舎or平日の窓口センター？', text='お選びください', actions=[
                 MessageTemplateAction(label='土日の本庁舎', text='土日の本庁舎'),
@@ -752,7 +753,9 @@ def my_number_others_flow(event, user_text):
         template_message = TemplateSendMessage(
             alt_text='default alt_text', template=buttons_template
         )
-        line_bot_api.reply_message(event.reply_token, template_message)
+        messages.append(template_message)
+
+        line_bot_api.reply_message(event.reply_token, messages)
     if user_text in ['土日の本庁舎']:
         reply_text = '今月・来月の予約可能日を案内。予約をする場合は、予約簿を用意し、氏名・生年月日・住所・電話番号を予約簿に書き込む。'
         line_bot_api.reply_message(
@@ -1092,6 +1095,24 @@ def handle_sticker_message(event):
         StickerSendMessage(
             package_id=event.message.package_id,
             sticker_id=event.message.sticker_id)
+    )
+
+
+@handler.add(FollowEvent)
+def handle_follow(event):
+
+    user_id = event.source.user_id
+    res = rmm.get_applied_menu(user_id)
+
+    if 'richMenuId' not in res.keys():
+        print(rmm.get_list())
+        rm_id = rmm.get_list()['richmenus'][0]['richMenuId']
+        rmm.apply(user_id, rm_id)
+
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text='つくば市役所botを友達登録していただきありがとうございます！。'
+                             '\n\n下のメニューから選択肢をお選びください。')
     )
 
 

@@ -171,11 +171,6 @@ def add_multimedia_event_handler():
 
 
 def add_group_event_handler():
-    @handler.add(FollowEvent)
-    def handle_follow(event):
-        line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text='Got follow event'))
-
     @handler.add(UnfollowEvent)
     def handle_unfollow():
         print("was unfollowed")
