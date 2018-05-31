@@ -27,7 +27,7 @@ if CHANNEL_ACCESS_TOKEN is None:
 line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
-
+# change below if using line-simulator or it would not work
 # debugging_tool = 'line-sim'
 debugging_tool = 'phone'
 
