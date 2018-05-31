@@ -66,7 +66,7 @@ richmenu_id = res["richMenuId"]
 print("Registered as " + richmenu_id)
 
 # Apply to user
-user_id = "U0a028f903127e2178bd789b4b4046ba7"
+user_id = "U4be6ef46e25cddd966d7fc3bf77218d7"
 rmm.apply(user_id, richmenu_id)
 # # Check
 res = rmm.get_applied_menu(user_id)
