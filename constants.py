@@ -15,8 +15,8 @@ if os.path.isfile('.env') or os.path.isfile('env'):
 else:
     print('Cannot find .env. So it should be on the cloud.')
 
-CHANNEL_SECRET = os.getenv('CHANNEL_SECRET')
-CHANNEL_ACCESS_TOKEN = os.getenv('CHANNEL_ACCESS_TOKEN')
+CHANNEL_SECRET = os.getenv('2aeccaa784bd1a4d7f86f6516d91851a')
+CHANNEL_ACCESS_TOKEN = os.getenv('3Qkr3SNlqPpzhZ0FYrPZupD/TcYAxK0+Kdh7J0u3JzH2qQkzZVGVjivLQ32olTcPIWOPg/jSaRvyekXU3gsLRs5BLHgCZEw1sHcTZoEy8yMOnTuXGvqh+27/RHYrQHVjTibPpU/YsK+qDXR+mrgEEQdB04t89/1O/w1cDnyilFU=')
 
 if CHANNEL_SECRET is None:
     print('Specify LINE_CHANNEL_SECRET as environment variable.')
